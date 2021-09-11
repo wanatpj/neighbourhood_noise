@@ -1,35 +1,70 @@
+import asyncio
 import logging
-import time
+import numpy
 import os
+import time
 import scipy.io.wavfile
 import sounddevice
-from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
+# from concurrent.futures import ThreadPoolExecutor
 
 DUMP_DIR = os.path.join(os.getenv("HOME"), "noise_dump")
-EXECUTOR = ThreadPoolExecutor(max_workers=7)
-AUDIO_LENGTH_SEC = 10.0
-SAMPLE_RATE = 44100
+# EXECUTOR = ThreadPoolExecutor(max_workers=7)
+AUDIO_LENGTH_SEC = 10 * 60.0
+SAMPLE_RATE = 44100  # 44.1 kHz
 
 LOGGER = logging.getLogger("measure_noise")
 LOGGER.setLevel(logging.INFO)
 logging.getLogger().setLevel(logging.INFO)
 
-def record_audio(file_name: str, seconds: float):
-    LOGGER.warning(f"directory_check file_name={file_name}, seconds={seconds}")
-    myrecording = sounddevice.rec(int(seconds * SAMPLE_RATE), samplerate=SAMPLE_RATE, channels=2)
+
+@dataclass
+class Recording:
+    target_file: str
+    recording: numpy.ndarray
+
+def save_recording(recording: Recording):
+    LOGGER.warning(f"save_recording recording.target_file={recording.target_file} recording.recording.len={recording.recording.size}")
+    scipy.io.wavfile.write(
+        recording.target_file,
+        SAMPLE_RATE,
+        recording.recording
+    )
+
+def record_audio(seconds: float) -> Recording:
+    LOGGER.warning(f"record_audio seconds={seconds}")
+    recording = sounddevice.rec(int(seconds * SAMPLE_RATE), samplerate=SAMPLE_RATE, channels=1)
     sounddevice.wait()
-    scipy.io.wavfile.write(file_name, SAMPLE_RATE, myrecording)
+    return recording
 
 def dump_loop():
-    LOGGER.warning("executing_main_loop")
-    start_time = time.time()
+    LOGGER.info("executing_main_loop")
+    recording = None
     while True:
-        EXECUTOR.submit(
-            record_audio,
-            file_name=os.path.join(DUMP_DIR, f"{time.time()}.wav"),
-            seconds=AUDIO_LENGTH_SEC,
+        timestamp = time.time_ns()
+        results = asyncio.get_event_loop().run_until_complete(asyncio.gather(
+            asyncio.get_event_loop().run_in_executor(
+                None,
+                record_audio,
+                AUDIO_LENGTH_SEC,
+            ),
+            *(
+                []
+                if recording is None
+                else [
+                    asyncio.get_event_loop().run_in_executor(
+                        None,
+                        save_recording,
+                        recording,
+                    )
+                ]
+            )
+        ))
+
+        recording = Recording(
+            target_file=os.path.join(DUMP_DIR, f"{timestamp}.wav"),
+            recording=results[0],
         )
-        time.sleep(AUDIO_LENGTH_SEC - ((time.time() - start_time) % AUDIO_LENGTH_SEC))
 
 if __name__ == "__main__":
     LOGGER.warning(f"directory_check dir={DUMP_DIR}")
