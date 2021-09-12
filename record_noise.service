@@ -2,7 +2,7 @@
 Description=Background Noise Recorder
 
 [Service]
-WorkingDirectory=/home/proxy/github/neighbourhood_noise
+WorkingDirectory=/home/pawel/github/neighbourhood_noise
 EnvironmentFile=/etc/environment
 ExecStart=/bin/bash -c "/usr/local/bin/bazel run :record_noise"
 Restart=always
