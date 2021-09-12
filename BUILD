@@ -1,6 +1,6 @@
 py_binary(
-    name = "measure_noise",
-    srcs = ["measure_noise.py"],
-    main = "measure_noise.py",
+    name = "record_noise",
+    srcs = ["record_noise.py"],
+    main = "record_noise.py",
     deps = [],
 )
