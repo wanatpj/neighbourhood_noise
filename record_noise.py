@@ -9,7 +9,7 @@ import scipy.io.wavfile
 import sounddevice
 # from concurrent.futures import ThreadPoolExecutor
 
-DUMP_DIR = os.path.join(os.getenv("HOME"), "noise_dump")
+DUMP_DIR = os.path.join("/home/pawel/noise_dump")
 # EXECUTOR = ThreadPoolExecutor(max_workers=7)
 AUDIO_LENGTH_SEC = 10 * 60.0
 SAMPLE_RATE = 44100  # 44.1 kHz
