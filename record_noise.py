@@ -1,11 +1,12 @@
 import asyncio
 import logging
-import numpy
 import os
 import time
+from dataclasses import dataclass
+
+import numpy
 import scipy.io.wavfile
 import sounddevice
-from dataclasses import dataclass
 # from concurrent.futures import ThreadPoolExecutor
 
 DUMP_DIR = os.path.join(os.getenv("HOME"), "noise_dump")
